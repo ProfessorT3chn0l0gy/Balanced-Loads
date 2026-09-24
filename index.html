@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Split-Phase Panel Load Balancing Lab</title>
+<style>
+:root{--bg:#05090d;--card:#0d1720;--line:#263744;--txt:#eef8ff;--mut:#9db1bf;--l1:#ff4d4d;--l2:#43a5ff;--neu:#fff;--gr:#48d77d;--gold:#ffd34d}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at top,#122434,#05090d 58%);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+header{text-align:center;padding:17px 10px 8px}h1{margin:0;font-size:clamp(24px,4vw,40px)}header p{margin:5px;color:var(--mut)}
+.grid{max-width:1350px;margin:auto;padding:10px;display:grid;grid-template-columns:1.1fr .9fr;gap:14px}.card{background:#0b151d;border:1px solid var(--line);border-radius:18px;padding:13px;box-shadow:0 12px 35px #0008}
+.panel{height:650px;position:relative;background:linear-gradient(90deg,#82919a,#d0d9de 7%,#aab7be 50%,#d0d9de 93%,#82919a);border:8px solid #4c5961;border-radius:8px;color:#071018;overflow:hidden}
+.ptitle{text-align:center;font-weight:950;letter-spacing:.06em;padding:5px}.main{position:absolute;top:37px;left:50%;transform:translateX(-50%);background:#20272c;color:#fff;border:3px solid #111;padding:8px 24px;border-radius:6px;font-weight:900}
+.service{position:absolute;top:0;width:10px;height:37px;border-radius:5px}.s1{left:44%;background:var(--l1)}.s2{right:44%;background:var(--l2)}
+.spine{position:absolute;top:105px;height:415px;width:25px;background:linear-gradient(90deg,#4b4b4b,#b9b9b9,#4b4b4b);border:1px solid #333}.sp1{left:44%}.sp2{right:44%}
+.nbus{position:absolute;top:105px;height:420px;width:28px;background:#edf3f5;border:3px solid #66757d;border-radius:5px}.nl{left:18px}.nr{right:18px}
+.gbus{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);height:20px;width:240px;background:#9ca9ae;border:2px solid #5d696e;border-radius:4px}
+.direct{position:absolute;font-size:11px;font-weight:950;background:#071018;color:white;padding:4px 6px;border-radius:5px;z-index:10}.dl1{left:39%;top:82px;color:#ff7777}.dl2{right:39%;top:82px;color:#75bdff}.dn{right:8px;top:82px}.dg{left:50%;bottom:47px;transform:translateX(-50%);color:#72e99c}
+.br{position:absolute;width:112px;height:42px;background:#1d2429;border:2px solid #080b0d;border-radius:5px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;z-index:3}
+.br.l{left:calc(44% - 119px)}.br.r{right:calc(44% - 119px)}.r1{top:145px}.r2{top:245px}.r3{top:345px}
+.loadLabel{position:absolute;font-size:11px;font-weight:900;background:#f5f8fa;padding:3px 5px;border-radius:4px;z-index:5}
+.ll{left:64px}.rr{right:64px}.a{top:153px}.b{top:253px}.c{top:353px}
+.w{position:absolute;height:6px;border-radius:8px;z-index:2}.hotL{background:var(--l1);left:67px;width:calc(44% - 70px)}.hotR{background:var(--l2);right:67px;width:calc(44% - 70px)}.y1{top:165px}.y2{top:265px}.y3{top:365px}
+.retL{position:absolute;height:4px;background:#fff;left:31px;width:80px}.retR{position:absolute;height:4px;background:#fff;right:31px;width:80px}.ny1{top:184px}.ny2{top:284px}.ny3{top:384px}
+.serviceN{position:absolute;right:27px;top:0;width:8px;height:105px;background:#fff;border-radius:6px;box-shadow:0 0 8px #fff8}
+.ammeter{position:absolute;right:2px;top:46px;width:58px;height:45px;background:#071018;color:white;border:2px solid #fff;border-radius:8px;text-align:center;font-weight:950;padding-top:3px;z-index:11}.ammeter small{display:block;font-size:9px;color:#ccc}.ammeter span{font-size:16px}
+.note{position:absolute;left:50%;transform:translateX(-50%);bottom:76px;background:#071018;color:white;border-radius:10px;padding:9px 14px;text-align:center;font-weight:900;width:75%;z-index:8}
+.dot{position:absolute;width:8px;height:8px;border-radius:50%;z-index:20;pointer-events:none}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:9px}.ctrl{background:#101f29;border:1px solid #263b49;border-radius:12px;padding:10px}.ctrl h3{margin:0 0 3px;font-size:14px}.val{float:right;font-size:20px;font-weight:950}.ctrl input{width:100%;accent-color:#ddd}
+.totals{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}.meter{background:#050a0e;border-radius:12px;padding:10px;text-align:center}.meter small{color:var(--mut);display:block}.meter b{font-size:25px}.balance{text-align:center;font-weight:1000;font-size:20px;padding:12px;border-radius:12px;margin:8px 0}
+.scopeWrap{background:#030609;border:1px solid #263744;border-radius:14px;padding:8px}.scopeTitle{text-align:center;font-weight:900;margin-bottom:5px}canvas{display:block;width:100%;height:270px;background:#020608;border-radius:9px}
+.key{font-size:12px;color:var(--mut);line-height:1.45;margin-top:8px}.legend{text-align:center;font-size:12px;margin:7px}.legend span{margin:0 7px}.sq{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.panel{height:610px}.controls{grid-template-columns:1fr 1fr}}
+</style></head>
+<body>
+<header><h1>Split-Phase Panel Load Balancing Lab</h1><p>120/240 V, 1φ, 3-wire • L1 and L2 are 180° apart • Adjust six 120 V branch loads</p></header>
+<div class="grid">
+<section class="card"><div class="panel" id="panel">
+<div class="ptitle">OPEN BREAKER PANEL — EDUCATIONAL MODEL</div><div class="service s1"></div><div class="service s2"></div><div class="main">2-POLE MAIN</div>
+<div class="spine sp1"></div><div class="spine sp2"></div><div class="nbus nl"></div><div class="nbus nr"></div><div class="gbus"></div><div class="serviceN"></div>
+<div class="direct dl1">L1 BUS</div><div class="direct dl2">L2 BUS</div><div class="direct dn">NEUTRAL BUS</div><div class="direct dg">GROUND BAR</div>
+<div class="ammeter"><small>SERVICE N</small><span id="na">0 A</span></div>
+<div class="br l r1">L1 BREAKER 1</div><div class="br l r2">L1 BREAKER 2</div><div class="br l r3">L1 BREAKER 3</div>
+<div class="br r r1">L2 BREAKER 1</div><div class="br r r2">L2 BREAKER 2</div><div class="br r r3">L2 BREAKER 3</div>
+<div class="loadLabel ll a">120 V LOAD</div><div class="loadLabel ll b">120 V LOAD</div><div class="loadLabel ll c">120 V LOAD</div>
+<div class="loadLabel rr a">120 V LOAD</div><div class="loadLabel rr b">120 V LOAD</div><div class="loadLabel rr c">120 V LOAD</div>
+<div class="w hotL y1"></div><div class="w hotL y2"></div><div class="w hotL y3"></div><div class="w hotR y1"></div><div class="w hotR y2"></div><div class="w hotR y3"></div>
+<div class="retL ny1"></div><div class="retL ny2"></div><div class="retL ny3"></div><div class="retR ny1"></div><div class="retR ny2"></div><div class="retR ny3"></div>
+<div class="note" id="panelNote">Adjust the branch loads to balance L1 and L2.</div>
+</div>
+<div class="legend"><span><i class="sq" style="background:#ff4d4d"></i>L1</span><span><i class="sq" style="background:#43a5ff"></i>L2</span><span><i class="sq" style="background:white"></i>Neutral</span></div></section>
+
+<section class="card">
+<div class="controls" id="controls"></div>
+<div class="totals"><div class="meter"><small>L1 TOTAL</small><b id="t1">0 A</b></div><div class="meter"><small>L2 TOTAL</small><b id="t2">0 A</b></div><div class="meter"><small>NEUTRAL</small><b id="tn">0 A</b></div></div>
+<div class="balance" id="bal"></div>
+<div class="scopeWrap"><div class="scopeTitle">CURRENT WAVEFORMS — 180° APART</div><canvas id="scope" width="760" height="300"></canvas></div>
+<div class="key"><b>Teaching point:</b> for this idealized split-phase example with linear 120 V loads, the two leg currents are opposite in phase on the shared neutral. Therefore <b>I<sub>N</sub> = |I<sub>L1</sub> − I<sub>L2</sub>|</b>. Equal L1 and L2 totals cancel at the service neutral even though current is still flowing in the branch circuits.<br><br><b>Try:</b> make both sides 30 A total, then increase only one branch. Watch the white neutral waveform and service-neutral particle flow appear.</div>
+</section></div>
+<script>
+const defaults=[10,10,10,10,10,10], controls=document.getElementById('controls');
+for(let i=0;i<6;i++){let side=i<3?'L1':'L2',num=i%3+1;controls.insertAdjacentHTML('beforeend',`<div class="ctrl"><h3>${side} Branch ${num}<span class="val" id="v${i}">${defaults[i]} A</span></h3><input id="s${i}" type="range" min="0" max="30" step="1" value="${defaults[i]}"></div>`)}
+let vals=[...defaults],L1=30,L2=30,N=0,particles=[],phase=0,panel=document.getElementById('panel'),cv=document.getElementById('scope'),ctx=cv.getContext('2d');
+for(let i=0;i<6;i++)document.getElementById('s'+i).oninput=e=>{vals[i]=+e.target.value;document.getElementById('v'+i).textContent=vals[i]+' A';update()};
+function update(){L1=vals.slice(0,3).reduce((a,b)=>a+b,0);L2=vals.slice(3).reduce((a,b)=>a+b,0);N=Math.abs(L1-L2);
+t1.textContent=L1+' A';t2.textContent=L2+' A';tn.textContent=na.textContent=N+' A';
+let balanced=N===0;bal.textContent=balanced?'BALANCED — SERVICE NEUTRAL = 0 A':'UNBALANCED — '+N+' A RETURNS ON SERVICE NEUTRAL';
+bal.style.background=balanced?'#145b38':N<=10?'#65531d':'#692626';
+panelNote.textContent=balanced?'0 A SERVICE NEUTRAL — EQUAL L1/L2 CURRENTS CANCEL':'SERVICE NEUTRAL CARRIES THE '+N+' A DIFFERENCE';
+makeParticles()}
+function makeParticles(){document.querySelectorAll('.dot').forEach(x=>x.remove());particles=[];
+function add(count,color,type,row=0){let n=Math.round(count/3);for(let k=0;k<n;k++){let d=document.createElement('i');d.className='dot';d.style.background=color;d.style.boxShadow='0 0 8px '+color;panel.appendChild(d);particles.push({d,type,row,t:k/Math.max(1,n)})}}
+vals.slice(0,3).forEach((v,i)=>add(v,'#ff4d4d','left',i));vals.slice(3).forEach((v,i)=>add(v,'#43a5ff','right',i));add(N,'#fff','neutral',0)}
+function position(p,t){let w=panel.clientWidth,y=165+p.row*100;if(p.type==='left')return [w*.44-(t*230),y];if(p.type==='right')return [w*.56+(t*230),y];return [w-31,103-t*94]}
+function animate(){particles.forEach(p=>{p.t=(p.t+.0045)%1;let q=position(p,p.t);p.d.style.left=q[0]+'px';p.d.style.top=q[1]+'px'});draw();requestAnimationFrame(animate)}
+function draw(){let w=cv.width,h=cv.height;ctx.clearRect(0,0,w,h);ctx.strokeStyle='#17303f';ctx.lineWidth=1;
+for(let x=0;x<w;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(let y=30;y<h;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+ctx.strokeStyle='#50606b';ctx.beginPath();ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();phase+=.018;
+let max=Math.max(1,L1,L2),scale=92/max;
+function wave(amp,shift,color,width=3){ctx.beginPath();for(let x=0;x<w;x++){let y=h/2-Math.sin((x/w)*Math.PI*4+phase+shift)*amp*scale;if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke()}
+wave(L1,0,'#ff4d4d');wave(L2,Math.PI,'#43a5ff');if(N>0)wave(N,L1>=L2?0:Math.PI,'#ffffff',4);
+ctx.font='bold 15px system-ui';ctx.fillStyle='#ff4d4d';ctx.fillText('L1 '+L1+' A',15,24);ctx.fillStyle='#43a5ff';ctx.fillText('L2 '+L2+' A (180°)',110,24);ctx.fillStyle='#fff';ctx.fillText('NEUTRAL '+N+' A',270,24);
+ctx.fillStyle='#9db1bf';ctx.font='12px system-ui';ctx.fillText('White trace = uncancelled current on shared neutral',15,h-14)}
+update();animate();
+</script></body></html>
